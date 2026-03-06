@@ -467,6 +467,129 @@ function Library:CreateWindow(options)
                 Label.Parent = GroupFrame
             end
 
+            function Group:AddColorPicker(text, options, callback)
+                local Default = options.Default or Color3.new(1, 1, 1)
+                local Color = Default
+                local Opened = false
+
+                local ColorFrame = Instance.new("Frame")
+                ColorFrame.Name = text .. "ColorPicker"
+                ColorFrame.Size = UDim2.new(1, 0, 0, 20)
+                ColorFrame.BackgroundTransparency = 1
+                ColorFrame.Parent = GroupFrame
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(1, -25, 1, 0)
+                Label.Position = UDim2.new(0, 0, 0, 0)
+                Label.BackgroundTransparency = 1
+                Label.Text = text
+                Label.TextColor3 = Library.Theme.TextColor
+                Label.TextSize = Library.Theme.TextSize
+                Label.Font = Library.Theme.Font
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.Parent = ColorFrame
+
+                local Preview = Instance.new("TextButton")
+                Preview.Size = UDim2.fromOffset(18, 14)
+                Preview.Position = UDim2.new(1, -18, 0.5, -7)
+                Preview.BackgroundColor3 = Color
+                Preview.BorderColor3 = Library.Theme.BorderColor
+                Preview.Text = ""
+                Preview.Parent = ColorFrame
+
+                local PickerFrame = Instance.new("Frame")
+                PickerFrame.Size = UDim2.fromOffset(120, 80)
+                PickerFrame.Position = UDim2.new(1, 2, 0, 0)
+                PickerFrame.BackgroundColor3 = Library.Theme.MainColor
+                PickerFrame.BorderColor3 = Library.Theme.BorderColor
+                PickerFrame.BorderSizePixel = 1
+                PickerFrame.Visible = false
+                PickerFrame.ZIndex = 20
+                PickerFrame.Parent = Preview
+
+                local function CreateSlider(name, color, offset)
+                    local SFrame = Instance.new("Frame")
+                    SFrame.Size = UDim2.new(1, -10, 0, 15)
+                    SFrame.Position = UDim2.new(0, 5, 0, offset)
+                    SFrame.BackgroundTransparency = 1
+                    SFrame.ZIndex = 21
+                    SFrame.Parent = PickerFrame
+
+                    local SBar = Instance.new("TextButton")
+                    SBar.Size = UDim2.new(1, 0, 1, 0)
+                    SBar.BackgroundColor3 = Library.Theme.HeaderColor
+                    SBar.BorderColor3 = Library.Theme.BorderColor
+                    SBar.Text = ""
+                    SBar.ZIndex = 22
+                    SBar.Parent = SFrame
+
+                    local SFill = Instance.new("Frame")
+                    SFill.Size = UDim2.new(color, 0, 1, 0)
+                    SFill.BackgroundColor3 = Library.Theme.AccentColor
+                    SFill.BorderSizePixel = 0
+                    SFill.ZIndex = 23
+                    SFill.Parent = SBar
+
+                    local dragging = false
+                    local function update(input)
+                        local pos = math.clamp((input.Position.X - SBar.AbsolutePosition.X) / SBar.AbsoluteSize.X, 0, 1)
+                        SFill.Size = UDim2.new(pos, 0, 1, 0)
+                        return pos
+                    end
+
+                    SBar.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging = true
+                        end
+                    end)
+
+                    return SBar, function(v) SFill.Size = UDim2.new(v, 0, 1, 0) end
+                end
+
+                local rBar, rSet = CreateSlider("R", Color.R, 10)
+                local gBar, gSet = CreateSlider("G", Color.G, 30)
+                local bBar, bSet = CreateSlider("B", Color.B, 50)
+
+                local function UpdateColor()
+                    Preview.BackgroundColor3 = Color
+                    if callback then callback(Color) end
+                end
+
+                local function HandleInput(bar, channel)
+                    local dragging = false
+                    bar.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging = true
+                        end
+                    end)
+                    UserInputService.InputChanged:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                            local pos = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+                            if channel == "R" then Color = Color3.new(pos, Color.G, Color.B) rSet(pos)
+                            elseif channel == "G" then Color = Color3.new(Color.R, pos, Color.B) gSet(pos)
+                            elseif channel == "B" then Color = Color3.new(Color.R, Color.G, pos) bSet(pos) end
+                            UpdateColor()
+                        end
+                    end)
+                    UserInputService.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging = false
+                        end
+                    end)
+                end
+
+                HandleInput(rBar, "R")
+                HandleInput(gBar, "G")
+                HandleInput(bBar, "B")
+
+                Preview.MouseButton1Click:Connect(function()
+                    Opened = not Opened
+                    PickerFrame.Visible = Opened
+                end)
+
+                return {OnChanged = function(self, cb) callback = cb return self end}
+            end
+
             return Group
         end
 
