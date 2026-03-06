@@ -196,19 +196,27 @@ function Library:CreateWindow(options)
             GroupTitle.Font = Library.Theme.Font
             GroupTitle.SizeToContents = true
             GroupTitle.AutomaticSize = Enum.AutomaticSize.X
+            GroupTitle.ZIndex = 5
             GroupTitle.Parent = GroupFrame
 
+            local Container = Instance.new("Frame")
+            Container.Name = "Container"
+            Container.Size = UDim2.new(1, 0, 0, 0)
+            Container.BackgroundTransparency = 1
+            Container.AutomaticSize = Enum.AutomaticSize.Y
+            Container.Parent = GroupFrame
+            
             local GroupList = Instance.new("UIListLayout")
             GroupList.SortOrder = Enum.SortOrder.LayoutOrder
             GroupList.Padding = UDim.new(0, 4)
-            GroupList.Parent = GroupFrame
+            GroupList.Parent = Container
             
             local GroupPadding = Instance.new("UIPadding")
             GroupPadding.PaddingTop = UDim.new(0, 12)
             GroupPadding.PaddingBottom = UDim.new(0, 5)
             GroupPadding.PaddingLeft = UDim.new(0, 5)
             GroupPadding.PaddingRight = UDim.new(0, 5)
-            GroupPadding.Parent = GroupFrame
+            GroupPadding.Parent = Container
 
             GroupList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
                 GroupFrame.Size = UDim2.new(1, 0, 0, GroupList.AbsoluteContentSize.Y + 17)
@@ -226,7 +234,7 @@ function Library:CreateWindow(options)
                 ToggleFrame.Size = UDim2.new(1, 0, 0, 20)
                 ToggleFrame.BackgroundTransparency = 1
                 ToggleFrame.Text = ""
-                ToggleFrame.Parent = GroupFrame
+                ToggleFrame.Parent = Container
 
                 local Box = Instance.new("Frame")
                 Box.Size = UDim2.fromOffset(14, 14)
@@ -277,7 +285,7 @@ function Library:CreateWindow(options)
                 Button.TextColor3 = Library.Theme.TextColor
                 Button.TextSize = Library.Theme.TextSize
                 Button.Font = Library.Theme.Font
-                Button.Parent = GroupFrame
+                Button.Parent = Container
 
                 Button.MouseEnter:Connect(function() Button.BackgroundColor3 = Library.Theme.HeaderColor:Lerp(Color3.new(1,1,1), 0.1) end)
                 Button.MouseLeave:Connect(function() Button.BackgroundColor3 = Library.Theme.HeaderColor end)
@@ -294,7 +302,7 @@ function Library:CreateWindow(options)
                 SliderFrame.Name = text .. "Slider"
                 SliderFrame.Size = UDim2.new(1, 0, 0, 32)
                 SliderFrame.BackgroundTransparency = 1
-                SliderFrame.Parent = GroupFrame
+                SliderFrame.Parent = Container
 
                 local Label = Instance.new("TextLabel")
                 Label.Size = UDim2.new(1, 0, 0, 14)
@@ -371,7 +379,7 @@ function Library:CreateWindow(options)
                 DropdownFrame.Name = text .. "Dropdown"
                 DropdownFrame.Size = UDim2.new(1, 0, 0, 36)
                 DropdownFrame.BackgroundTransparency = 1
-                DropdownFrame.Parent = GroupFrame
+                DropdownFrame.Parent = Container
 
                 local Label = Instance.new("TextLabel")
                 Label.Size = UDim2.new(1, 0, 0, 14)
@@ -464,7 +472,7 @@ function Library:CreateWindow(options)
                 Label.TextSize = Library.Theme.TextSize
                 Label.Font = Library.Theme.Font
                 Label.TextXAlignment = Enum.TextXAlignment.Left
-                Label.Parent = GroupFrame
+                Label.Parent = Container
             end
 
             function Group:AddColorPicker(text, options, callback)
@@ -476,7 +484,7 @@ function Library:CreateWindow(options)
                 ColorFrame.Name = text .. "ColorPicker"
                 ColorFrame.Size = UDim2.new(1, 0, 0, 20)
                 ColorFrame.BackgroundTransparency = 1
-                ColorFrame.Parent = GroupFrame
+                ColorFrame.Parent = Container
 
                 local Label = Instance.new("TextLabel")
                 Label.Size = UDim2.new(1, -25, 1, 0)
