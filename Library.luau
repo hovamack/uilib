@@ -187,10 +187,9 @@ function Library:CreateWindow(options)
         function Tab:AddGroupbox(title)
             local GroupFrame = Instance.new("Frame")
             GroupFrame.Name = title .. "Group"
-            GroupFrame.Size = UDim2.new(1, 0, 0, 0)
+            GroupFrame.Size = UDim2.new(1, 0, 0, 30)
             GroupFrame.BackgroundColor3 = Library.Theme.GroupColor
             GroupFrame.BorderColor3 = Library.Theme.BorderColor
-            GroupFrame.AutomaticSize = Enum.AutomaticSize.Y
             GroupFrame.Parent = TabContent
 
             local GroupTitle = Instance.new("TextLabel")
@@ -209,9 +208,8 @@ function Library:CreateWindow(options)
 
             local Container = Instance.new("Frame")
             Container.Name = "Container"
-            Container.Size = UDim2.new(1, 0, 0, 0)
+            Container.Size = UDim2.new(1, 0, 0, 30)
             Container.BackgroundTransparency = 1
-            Container.AutomaticSize = Enum.AutomaticSize.Y
             Container.ZIndex = 2
             Container.Parent = GroupFrame
             
@@ -226,6 +224,14 @@ function Library:CreateWindow(options)
             GroupPadding.PaddingLeft = UDim.new(0, 5)
             GroupPadding.PaddingRight = UDim.new(0, 5)
             GroupPadding.Parent = Container
+
+            local function UpdateSize()
+                local inner = GroupList.AbsoluteContentSize.Y + 17
+                GroupFrame.Size = UDim2.new(1, 0, 0, inner)
+                Container.Size = UDim2.new(1, 0, 0, inner)
+            end
+            GroupList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSize)
+            UpdateSize()
 
             local Group = {}
 
