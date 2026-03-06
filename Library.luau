@@ -134,11 +134,12 @@ function Library:CreateWindow(options)
     Overlay.Parent              = ScreenGui
 
     -- Main window frame
-    local Main = Instance.new("Frame")
+    local Main = Instance.new("CanvasGroup")
     Main.Name             = "Main"
     Main.Size             = Size
     Main.Position         = UDim2.new(0.5, -Size.X.Offset/2, 0.5, -Size.Y.Offset/2)
     Main.BackgroundColor3 = T.Background
+    Main.GroupTransparency = 0
     Main.BorderSizePixel  = 0
     Main.ClipsDescendants = false   -- must be false so overlay can receive input
     Main.ZIndex           = 1
@@ -195,9 +196,25 @@ function Library:CreateWindow(options)
     TitleLbl.Parent             = TitleBar
     MakeDraggable(Main, TitleBar)
 
+    local isFading = false
     UserInputService.InputBegan:Connect(function(input, processed)
         if not processed and input.KeyCode == Enum.KeyCode.F8 then
-            Main.Visible = not Main.Visible
+            if isFading then return end
+            isFading = true
+            
+            if Main.Visible then
+                CloseOtherOverlays(nil) -- hide dropdowns immediately
+                Tween(Main, { GroupTransparency = 1 }, 0.2)
+                task.delay(0.2, function()
+                    if Main.GroupTransparency >= 0.99 then Main.Visible = false end
+                    isFading = false
+                end)
+            else
+                Main.GroupTransparency = 1
+                Main.Visible = true
+                Tween(Main, { GroupTransparency = 0 }, 0.2)
+                task.delay(0.2, function() isFading = false end)
+            end
         end
     end)
 
