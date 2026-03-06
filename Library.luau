@@ -172,7 +172,8 @@ function Library:CreateWindow(options)
         end
 
         TabButton.MouseButton1Click:Connect(Select)
-        
+
+        -- FIX: Only one Tab object, inserted once
         local Tab = {
             Button = TabButton,
             Content = TabContent
@@ -190,6 +191,9 @@ function Library:CreateWindow(options)
             GroupFrame.Size = UDim2.new(1, 0, 0, 30)
             GroupFrame.BackgroundColor3 = Library.Theme.GroupColor
             GroupFrame.BorderColor3 = Library.Theme.BorderColor
+            GroupFrame.BorderSizePixel = 1
+            -- FIX: Don't clip children so contents are always visible
+            GroupFrame.ClipsDescendants = false
             GroupFrame.Parent = TabContent
 
             local GroupTitle = Instance.new("TextLabel")
@@ -201,7 +205,6 @@ function Library:CreateWindow(options)
             GroupTitle.TextColor3 = Library.Theme.TextColor
             GroupTitle.TextSize = 12
             GroupTitle.Font = Library.Theme.Font
-            GroupTitle.SizeToContents = true
             GroupTitle.AutomaticSize = Enum.AutomaticSize.X
             GroupTitle.ZIndex = 5
             GroupTitle.Parent = GroupFrame
@@ -212,12 +215,12 @@ function Library:CreateWindow(options)
             Container.BackgroundTransparency = 1
             Container.ZIndex = 2
             Container.Parent = GroupFrame
-            
+
             local GroupList = Instance.new("UIListLayout")
             GroupList.SortOrder = Enum.SortOrder.LayoutOrder
             GroupList.Padding = UDim.new(0, 4)
             GroupList.Parent = Container
-            
+
             local GroupPadding = Instance.new("UIPadding")
             GroupPadding.PaddingTop = UDim.new(0, 12)
             GroupPadding.PaddingBottom = UDim.new(0, 5)
@@ -226,10 +229,12 @@ function Library:CreateWindow(options)
             GroupPadding.Parent = Container
 
             local function UpdateSize()
-                local inner = GroupList.AbsoluteContentSize.Y + 17
+                -- FIX: Add padding offsets so the group frame fully wraps its content
+                local inner = GroupList.AbsoluteContentSize.Y + 12 + 5 + 10 -- paddingTop + paddingBottom + extra
                 GroupFrame.Size = UDim2.new(1, 0, 0, inner)
                 Container.Size = UDim2.new(1, 0, 0, inner)
             end
+
             GroupList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSize)
             UpdateSize()
 
@@ -282,6 +287,9 @@ function Library:CreateWindow(options)
                     Update()
                 end)
 
+                -- FIX: defer size update so layout has settled
+                task.defer(UpdateSize)
+
                 return {OnChanged = function(self, cb) callback = cb return self end}
             end
 
@@ -291,15 +299,26 @@ function Library:CreateWindow(options)
                 Button.Size = UDim2.new(1, 0, 0, 22)
                 Button.BackgroundColor3 = Library.Theme.HeaderColor
                 Button.BorderColor3 = Library.Theme.BorderColor
+                Button.BorderSizePixel = 1
                 Button.Text = text
                 Button.TextColor3 = Library.Theme.TextColor
                 Button.TextSize = Library.Theme.TextSize
                 Button.Font = Library.Theme.Font
+                Button.AutoButtonColor = false
                 Button.Parent = Container
 
-                Button.MouseEnter:Connect(function() Button.BackgroundColor3 = Library.Theme.HeaderColor:Lerp(Color3.new(1,1,1), 0.1) end)
-                Button.MouseLeave:Connect(function() Button.BackgroundColor3 = Library.Theme.HeaderColor end)
-                Button.MouseButton1Click:Connect(callback)
+                Button.MouseEnter:Connect(function()
+                    Button.BackgroundColor3 = Library.Theme.HeaderColor:Lerp(Color3.new(1,1,1), 0.1)
+                end)
+                Button.MouseLeave:Connect(function()
+                    Button.BackgroundColor3 = Library.Theme.HeaderColor
+                end)
+                Button.MouseButton1Click:Connect(function()
+                    if callback then callback() end
+                end)
+
+                -- FIX: defer size update so the group frame expands to show the button
+                task.defer(UpdateSize)
             end
 
             function Group:AddSlider(text, options, callback)
@@ -376,6 +395,8 @@ function Library:CreateWindow(options)
                     end
                 end)
 
+                task.defer(UpdateSize)
+
                 return {OnChanged = function(self, cb) callback = cb return self end}
             end
 
@@ -406,7 +427,7 @@ function Library:CreateWindow(options)
                 Button.Position = UDim2.new(0, 0, 0, 16)
                 Button.BackgroundColor3 = Library.Theme.HeaderColor
                 Button.BorderColor3 = Library.Theme.BorderColor
-                Button.Text = " " .. Selected
+                Button.Text = " " .. (Selected or "")
                 Button.TextColor3 = Library.Theme.TextColor
                 Button.TextSize = 12
                 Button.Font = Library.Theme.Font
@@ -470,6 +491,8 @@ function Library:CreateWindow(options)
                     ListFrame.Visible = Opened
                 end)
 
+                task.defer(UpdateSize)
+
                 return {OnChanged = function(self, cb) callback = cb return self end}
             end
 
@@ -483,6 +506,8 @@ function Library:CreateWindow(options)
                 Label.Font = Library.Theme.Font
                 Label.TextXAlignment = Enum.TextXAlignment.Left
                 Label.Parent = Container
+
+                task.defer(UpdateSize)
             end
 
             function Group:AddColorPicker(text, options, callback)
@@ -605,13 +630,15 @@ function Library:CreateWindow(options)
                     PickerFrame.Visible = Opened
                 end)
 
+                task.defer(UpdateSize)
+
                 return {OnChanged = function(self, cb) callback = cb return self end}
             end
 
             return Group
         end
 
-        table.insert(Window.Tabs, Tab)
+        -- FIX: Removed duplicate table.insert that was here in the original
         return Tab
     end
 
