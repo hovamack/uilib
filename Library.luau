@@ -32,6 +32,34 @@ local T = {
 
 local Library = { Theme = T, Windows = {} }
 
+-- ── Global overlay close registry ────────────────────────────────────────────
+-- Every dropdown/colorpicker registers a closer here.
+-- One global InputBegan fires them all when clicking outside.
+local OverlayClosers = {}
+
+local function RegisterCloser(panel, selBtn, onClose)
+    table.insert(OverlayClosers, { panel = panel, selBtn = selBtn, onClose = onClose })
+end
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+    for _, entry in ipairs(OverlayClosers) do
+        if entry.panel.Visible then
+            -- Check if click landed inside the panel or the trigger button
+            local function insideFrame(frame)
+                local pos  = frame.AbsolutePosition
+                local size = frame.AbsoluteSize
+                local mp   = UserInputService:GetMouseLocation()
+                return mp.X >= pos.X and mp.X <= pos.X + size.X
+                   and mp.Y >= pos.Y and mp.Y <= pos.Y + size.Y
+            end
+            if not insideFrame(entry.panel) and not insideFrame(entry.selBtn) then
+                entry.onClose()
+            end
+        end
+    end
+end)
+
 -- ── Helpers ──────────────────────────────────────────────────────────────────
 
 local function Tween(obj, props, t)
@@ -607,6 +635,12 @@ function Library:CreateWindow(options)
                     Panel.Visible = true
                 end
 
+                local function CloseDD()
+                    Open = false; Panel.Visible = false
+                    SelStroke.Color = T.Border
+                    Tween(SelBtn, { BackgroundColor3 = T.ControlBg }, 0.1)
+                end
+
                 SelBtn.MouseEnter:Connect(function()
                     if not Open then Tween(SelBtn, { BackgroundColor3 = T.ControlHov }, 0.1) end
                 end)
@@ -620,11 +654,11 @@ function Library:CreateWindow(options)
                         Tween(SelBtn, { BackgroundColor3 = T.ControlHov }, 0.1)
                         OpenPanel()
                     else
-                        SelStroke.Color = T.Border
-                        Tween(SelBtn, { BackgroundColor3 = T.ControlBg }, 0.1)
-                        Panel.Visible = false
+                        CloseDD()
                     end
                 end)
+
+                RegisterCloser(Panel, SelBtn, CloseDD)
 
                 task.defer(RefreshSize)
                 return { OnChanged = function(s, cb) callback = cb return s end }
@@ -749,11 +783,18 @@ function Library:CreateWindow(options)
                     Panel.Visible = true
                 end
 
+                local function CloseCP()
+                    Open = false; Panel.Visible = false
+                    SwatchStroke.Color = T.Border
+                end
+
                 Swatch.MouseButton1Click:Connect(function()
                     Open = not Open
                     SwatchStroke.Color = Open and T.BorderFocus or T.Border
-                    if Open then OpenPanel() else Panel.Visible = false end
+                    if Open then OpenPanel() else CloseCP() end
                 end)
+
+                RegisterCloser(Panel, Swatch, CloseCP)
 
                 task.defer(RefreshSize)
                 return { OnChanged = function(s, cb) callback = cb return s end }
