@@ -41,6 +41,14 @@ local function RegisterCloser(panel, selBtn, onClose)
     table.insert(OverlayClosers, { panel = panel, selBtn = selBtn, onClose = onClose })
 end
 
+local function CloseOtherOverlays(exemptPanel)
+    for _, entry in ipairs(OverlayClosers) do
+        if entry.panel ~= exemptPanel and entry.panel.Visible then
+            entry.onClose()
+        end
+    end
+end
+
 UserInputService.InputBegan:Connect(function(input)
     if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
     for _, entry in ipairs(OverlayClosers) do
@@ -182,6 +190,12 @@ function Library:CreateWindow(options)
     TitleLbl.ZIndex             = 3
     TitleLbl.Parent             = TitleBar
     MakeDraggable(Main, TitleBar)
+
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if not processed and input.KeyCode == Enum.KeyCode.F8 then
+            Main.Visible = not Main.Visible
+        end
+    end)
 
     -- ── Tab bar (NO UIPadding — it was shrinking buttons to zero height) ─────
     local TAB_H = 28
@@ -650,6 +664,7 @@ function Library:CreateWindow(options)
                 SelBtn.MouseButton1Click:Connect(function()
                     Open = not Open
                     if Open then
+                        CloseOtherOverlays(Panel)
                         SelStroke.Color = T.BorderFocus
                         Tween(SelBtn, { BackgroundColor3 = T.ControlHov }, 0.1)
                         OpenPanel()
@@ -791,7 +806,12 @@ function Library:CreateWindow(options)
                 Swatch.MouseButton1Click:Connect(function()
                     Open = not Open
                     SwatchStroke.Color = Open and T.BorderFocus or T.Border
-                    if Open then OpenPanel() else CloseCP() end
+                    if Open then 
+                        CloseOtherOverlays(Panel)
+                        OpenPanel() 
+                    else 
+                        CloseCP() 
+                    end
                 end)
 
                 RegisterCloser(Panel, Swatch, CloseCP)
