@@ -57,7 +57,7 @@ UserInputService.InputBegan:Connect(function(input)
             local function insideFrame(frame)
                 local pos  = frame.AbsolutePosition
                 local size = frame.AbsoluteSize
-                local mp   = UserInputService:GetMouseLocation()
+                local mp   = input.Position
                 return mp.X >= pos.X and mp.X <= pos.X + size.X
                    and mp.Y >= pos.Y and mp.Y <= pos.Y + size.Y
             end
