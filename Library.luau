@@ -62,7 +62,11 @@ UserInputService.InputBegan:Connect(function(input)
                    and mp.Y >= pos.Y and mp.Y <= pos.Y + size.Y
             end
             if not insideFrame(entry.panel) and not insideFrame(entry.selBtn) then
-                entry.onClose()
+                task.spawn(function()
+                    -- Yield slightly to allow Dropdown Items' MouseButton1Click to register first
+                    task.wait(0.05) 
+                    entry.onClose()
+                end)
             end
         end
     end
