@@ -66,6 +66,7 @@ function Library:CreateWindow(options)
     ScreenGui.Name = "IMGuiLib"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.DisplayOrder = 100
+    ScreenGui.IgnoreGuiInset = true
     ScreenGui.Parent = (RunService:IsStudio() and LocalPlayer:WaitForChild("PlayerGui") or game:GetService("CoreGui"))
 
     local MainFrame = Instance.new("Frame")
@@ -156,6 +157,10 @@ function Library:CreateWindow(options)
         ContentList.Padding = UDim.new(0, 5)
         ContentList.Parent = TabContent
 
+        ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 15)
+        end)
+
         local function Select()
             for _, t in pairs(Window.Tabs) do
                 t.Content.Visible = false
@@ -167,22 +172,25 @@ function Library:CreateWindow(options)
         end
 
         TabButton.MouseButton1Click:Connect(Select)
-
-        if #Window.Tabs == 0 then
-            Select()
-        end
-
+        
         local Tab = {
             Button = TabButton,
             Content = TabContent
         }
 
+        table.insert(Window.Tabs, Tab)
+
+        if #Window.Tabs == 1 then
+            Select()
+        end
+
         function Tab:AddGroupbox(title)
             local GroupFrame = Instance.new("Frame")
             GroupFrame.Name = title .. "Group"
-            GroupFrame.Size = UDim2.new(1, 0, 0, 30)
+            GroupFrame.Size = UDim2.new(1, 0, 0, 0)
             GroupFrame.BackgroundColor3 = Library.Theme.GroupColor
             GroupFrame.BorderColor3 = Library.Theme.BorderColor
+            GroupFrame.AutomaticSize = Enum.AutomaticSize.Y
             GroupFrame.Parent = TabContent
 
             local GroupTitle = Instance.new("TextLabel")
@@ -204,6 +212,7 @@ function Library:CreateWindow(options)
             Container.Size = UDim2.new(1, 0, 0, 0)
             Container.BackgroundTransparency = 1
             Container.AutomaticSize = Enum.AutomaticSize.Y
+            Container.ZIndex = 2
             Container.Parent = GroupFrame
             
             local GroupList = Instance.new("UIListLayout")
@@ -217,11 +226,6 @@ function Library:CreateWindow(options)
             GroupPadding.PaddingLeft = UDim.new(0, 5)
             GroupPadding.PaddingRight = UDim.new(0, 5)
             GroupPadding.Parent = Container
-
-            GroupList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                GroupFrame.Size = UDim2.new(1, 0, 0, GroupList.AbsoluteContentSize.Y + 17)
-                TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-            end)
 
             local Group = {}
 
