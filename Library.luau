@@ -78,6 +78,51 @@ local function Tween(obj, props, t)
     TweenService:Create(obj, TweenInfo.new(t or 0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
 end
 
+local function TweenTransparency(gui, alpha, duration)
+    local tInfo = TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
+    local function doTween(obj)
+        if obj:IsA("Frame") or obj:IsA("TextButton") or obj:IsA("ScrollingFrame") then
+            -- We don't want to make things fully opaque that were meant to be invisible
+            local targetBg = obj:GetAttribute("OrigBgTrans")
+            if not targetBg then
+                targetBg = obj.BackgroundTransparency
+                obj:SetAttribute("OrigBgTrans", targetBg)
+            end
+            TweenService:Create(obj, tInfo, { BackgroundTransparency = alpha == 1 and 1 or targetBg }):Play()
+        end
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            local targetTxt = obj:GetAttribute("OrigTxtTrans")
+            if not targetTxt then
+                targetTxt = obj.TextTransparency
+                obj:SetAttribute("OrigTxtTrans", targetTxt)
+            end
+            TweenService:Create(obj, tInfo, { TextTransparency = alpha == 1 and 1 or targetTxt }):Play()
+        end
+        if obj:IsA("UIStroke") then
+            local targetStroke = obj:GetAttribute("OrigStrTrans")
+            if not targetStroke then
+                targetStroke = obj.Transparency
+                obj:SetAttribute("OrigStrTrans", targetStroke)
+            end
+            TweenService:Create(obj, tInfo, { Transparency = alpha == 1 and 1 or targetStroke }):Play()
+        end
+        if obj:IsA("ScrollingFrame") then
+            local targetScroll = obj:GetAttribute("OrigScrollTrans")
+            if not targetScroll then
+                targetScroll = obj.ScrollBarImageTransparency
+                obj:SetAttribute("OrigScrollTrans", targetScroll)
+            end
+            TweenService:Create(obj, tInfo, { ScrollBarImageTransparency = alpha == 1 and 1 or targetScroll }):Play()
+        end
+    end
+    
+    doTween(gui)
+    for _, child in ipairs(gui:GetDescendants()) do
+        doTween(child)
+    end
+end
+
 local function Corner(p, r)
     local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, r or 4); c.Parent = p; return c
 end
@@ -134,12 +179,11 @@ function Library:CreateWindow(options)
     Overlay.Parent              = ScreenGui
 
     -- Main window frame
-    local Main = Instance.new("CanvasGroup")
+    local Main = Instance.new("Frame")
     Main.Name             = "Main"
     Main.Size             = Size
     Main.Position         = UDim2.new(0.5, -Size.X.Offset/2, 0.5, -Size.Y.Offset/2)
     Main.BackgroundColor3 = T.Background
-    Main.GroupTransparency = 0
     Main.BorderSizePixel  = 0
     Main.ClipsDescendants = false   -- must be false so overlay can receive input
     Main.ZIndex           = 1
@@ -197,23 +241,27 @@ function Library:CreateWindow(options)
     MakeDraggable(Main, TitleBar)
 
     local isFading = false
+    local isVisible = true
     UserInputService.InputBegan:Connect(function(input, processed)
         if not processed and input.KeyCode == Enum.KeyCode.F8 then
             if isFading then return end
             isFading = true
             
-            if Main.Visible then
+            if isVisible then
                 CloseOtherOverlays(nil) -- hide dropdowns immediately
-                Tween(Main, { GroupTransparency = 1 }, 0.2)
+                TweenTransparency(Main, 1, 0.2)
                 task.delay(0.2, function()
-                    if Main.GroupTransparency >= 0.99 then Main.Visible = false end
+                    Main.Visible = false
+                    isVisible = false
                     isFading = false
                 end)
             else
-                Main.GroupTransparency = 1
                 Main.Visible = true
-                Tween(Main, { GroupTransparency = 0 }, 0.2)
-                task.delay(0.2, function() isFading = false end)
+                TweenTransparency(Main, 0, 0.2)
+                task.delay(0.2, function()
+                    isVisible = true
+                    isFading = false 
+                end)
             end
         end
     end)
